@@ -75,17 +75,8 @@ configure() {
 	setLine
 	echo "./configure $PARAMCONFIG"
 	setLine 1
-	CFLAGS="$SLKFLAGS" \
-	CXXFLAGS="$SLKFLAGS" \
-	./configure $PARAMCONFIG
-}
-
-configure() {
-	setLine
-	echo "./configure $PARAMCONFIG"
-	setLine 1
-	CFLAGS="$SLKFLAGS" \
-	CXXFLAGS="$SLKFLAGS" \
+	CFLAGS="$SLKCFLAGS" \
+	CXXFLAGS="$SLKCFLAGS" \
 	./configure $PARAMCONFIG
 }
 
