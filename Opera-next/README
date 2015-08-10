@@ -1,0 +1,16 @@
+
+Here's how to install Opera-next Browser on Slackware.
+
+First, go to
+http://www.opera.com/browser/
+and download the .deb package opera version 26+
+
+Then, with the Opera .deb package in the same directory
+as the opera-next.SlackBuild script, run the script as
+root to convert the .deb to a Slackware .txz:
+
+./opera-next.SlackBuild
+
+This will produce a Slackware compatible .txz package.
+You'll find the output package in the /tmp directory.
+

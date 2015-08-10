@@ -1,0 +1,143 @@
+#!/bin/sh
+
+# SlackBuild script for bitmeteros
+# AUTHOR: MyRequiem
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR "AS IS" AND ANY EXPRESS OR IMPLIED
+
+PRGNAM=bitmeteros
+CWD=$(pwd)
+TMP=${TMP:-/tmp}
+BUILD=$TMP/build-${PRGNAM}
+PKG=$BUILD/package-${PRGNAM}
+OUTPUT=${OUTPUT:-/tmp}
+TAG=${TAG:-myreq}
+PKGTYPE=${PKGTYPE:-txz}
+
+if [ -z "${ARCH}" ]; then
+	arc=$(uname -m)
+	case "${arch}" in
+		i?86)	ARCH=i486	;;
+		arm*)	ARCH=arm	;;
+		*)		ARCH=${arc}	;;
+	esac
+fi
+
+if [ ${ARCH} = "i486" ]; then
+	SLKCFLAGS="-O2 -march=i486 -mtune=i686"
+	LIBDIRSUFFIX=""
+elif [ ${ARCH} = "i686" ]; then
+	SLKCFLAGS="-O2 -march=i686 -mtune=i686"
+	LIBDIRSUFFIX=""
+elif [ ${ARCH} = "x86_64" ]; then
+	SLKCFLAGS="-O2 -fPIC"
+	LIBDIRSUFFIX="64"
+else
+	SLKCFLAGS="-O2"
+	LIBDIRSUFFIX=""
+fi
+
+# checking deps
+checkdeps() {
+	echo -n "Checking wget package... "
+	if ! ls /var/log/packages/wget-[0-9]* 1>/dev/null 2>&1; then
+		echo no
+		exit 1
+	fi
+	echo ok
+
+	echo -n "Checking alien package... "
+	if ! ls /var/log/packages/alien-[0-9]* 1>/dev/null 2>&1; then
+		echo no
+		echo Downlod and install alien package:
+		echo http://joeyh.name/code/alien/
+		exit 1
+	fi
+	echo ok
+
+	echo -n "Checking git package... "
+	if ! ls /var/log/packages/git-[0-9]* 1>/dev/null 2>&1; then
+		echo no
+		echo Downlod and install git package:
+		echo http://git-scm.com/downloads
+		exit 1
+	fi
+	echo ok
+
+	echo -n "Checking bitmeter OS .deb package... "
+	if ! ls ${PRGNAM}-[0-9]*.tgz 1>/dev/null 2>&1; then
+		echo -e "no\nDownloading Bitmeter Os .deb package:"
+		wget -ct 0 http://codebox.org.uk/downloads/bitmeteros/linux${LIBDIRSUFFIX}
+		mv linux${LIBDIRSUFFIX} linux${LIBDIRSUFFIX}.deb
+		alien -t --scripts linux${LIBDIRSUFFIX}.deb
+		rm -f linux${LIBDIRSUFFIX}.deb
+	else
+		echo ok
+	fi
+
+	echo -n "Checking source code dpkg package... "
+	if ! [ -d ./dpkg ]; then
+		echo -e "no\nClone source code dpkg package from GitHub:"
+		git clone git://git.debian.org/git/dpkg/dpkg.git
+	else
+		echo ok
+	fi
+}
+
+checkdeps
+VERSION=$(ls bitmeteros-*.tgz | rev | cut -f 2- -d . | cut -f 1 -d - | rev);
+
+rm -rf ${BUILD}
+mkdir -p ${TMP} ${BUILD} ${PKG} ${OUTPUT}
+cd ${PKG}
+tar -xvzf ${CWD}/${PRGNAM}-${VERSION}.tgz
+rm -rf install/*
+cat ${CWD}/doinst.sh > install/doinst.sh
+cat ${CWD}/slack-desc > install/slack-desc
+mv usr/share/man usr/
+
+echo -e "\n---------------------------"
+echo Download docs...
+echo ---------------------------
+
+URL=http://codebox.org.uk/pages/bitmeteros
+doc=usr/doc/${PRGNAM}-${VERSION}
+PARAM="-ct 0 -nd -pHEKk"
+docs="bitmeteros change-log faq bmclient bmdb bmsync"
+for d in ${docs}; do
+	mkdir -p ${doc}/${d}
+	if [ "${d}" = "bitmeteros" ]; then
+		wget ${PARAM} -P ${doc}/${d} ${URL}
+	elif [ "${d}" = "bmclient" ]; then
+		wget ${PARAM} -P ${doc}/${d} ${URL}/bmclient/man
+		mv ${doc}/${d}/man.html ${doc}/${d}/bmclient_manual.html
+	elif [ "${d}" = "bmdb" ]; then
+		wget ${PARAM} -P ${doc}/${d} ${URL}/bmdb/man
+		mv ${doc}/${d}/man.html ${doc}/${d}/bmdb_manual.html
+	elif [ "${d}" = "bmsync" ]; then
+		wget ${PARAM} -P ${doc}/${d} ${URL}/bmsync/man
+		mv ${doc}/${d}/man.html ${doc}/${d}/bmsync_manual.html
+	else
+		wget ${PARAM} -P ${doc}/${d} ${URL}/${d}
+	fi
+done
+
+find ${doc} -type f -a ! \( -name "*.html" -o -name "*.ico" -o -name "*.png" \
+-o -name "*.jpeg" -o -name "*.jpg" -o -name "*.css" \) -delete
+
+(
+	cd ${BUILD} && cp -r ${CWD}/dpkg . && cd dpkg
+	autoreconf -f -i
+	./configure && make
+)
+
+cp ../dpkg/utils/start-stop-daemon usr/bin
+
+chown -R root:root .
+find -L . \
+ \( -perm 777 -o -perm 775 -o -perm 750 -o -perm 711 -o -perm 555 \
+  -o -perm 511 \) -exec chmod 755 {} \; -o \
+ \( -perm 666 -o -perm 664 -o -perm 640 -o -perm 600 -o -perm 444 \
+ -o -perm 440 -o -perm 400 \) -exec chmod 644 {} \;
+
+/sbin/makepkg -l y -c n ${OUTPUT}/${PRGNAM}-${VERSION}-${ARCH}-${TAG}.${PKGTYPE}
+

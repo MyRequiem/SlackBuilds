@@ -1,0 +1,17 @@
+
+Here's how to install Yandex Browser on Slackware.
+
+First, go to http://browser.yandex.ru/
+
+Click the download button. Currently only available beta version x86_64.
+Download the .deb package.
+
+Then, with the Yandex.deb package in the same directory
+as the yandex-browser.SlackBuild script, run the script as root to
+convert the .deb to a Slackware .txz:
+
+./yandex-browser.SlackBuild
+
+This will produce a Slackware compatible .txz package.
+You'll find the output package in the /tmp directory.
+

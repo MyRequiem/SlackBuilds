@@ -1,0 +1,19 @@
+# HOW TO EDIT THIS FILE:
+# The "handy ruler" below makes it easier to edit a package description.  Line
+# up the first '|' above the ':' following the base package name, and the '|' on
+# the right side marks the last column you can put a character in.  You must make
+# exactly 11 lines for the formatting to be correct.  It's also customary to
+# leave one space after the ':'.
+
+			|-----handy-ruler------------------------------------------------------|
+bitmeteros: Bitmeter OS (Bandwidth monitor)
+bitmeteros:
+bitmeteros: BitMeter OS is a free, open-source, bandwidth monitor that works on
+bitmeteros: Windows, Linux and Mac OSX. BitMeter OS keeps track of how much you
+bitmeteros: you use your internet/network connection, and allows you to view this
+bitmeteros: information either via a web browser, or by using the command line tools.
+bitmeteros: The Web Interface displays various graphs and charts that show how your
+bitmeteros: internet/network connection has been used over time.
+bitmeteros:
+bitmeteros: http://codebox.org.uk/pages/bitmeteros
+bitmeteros:
