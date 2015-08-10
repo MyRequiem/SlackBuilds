@@ -120,7 +120,9 @@ exports.TagWriter = Trait({
                 buf.push("\t", tagfield, ":");
 
                 var escape = function(str) { return ESCAPES[str]; };
-                buf.push(tag[tagfield].replace("[\\\n\r\t]", escape));
+                if (tag[tagfield]) {
+                    buf.push(tag[tagfield].replace("[\\\n\r\t]", escape));
+                }
             });
 
             buf.push("\n");
