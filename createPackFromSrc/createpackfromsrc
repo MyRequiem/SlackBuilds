@@ -1,249 +1,257 @@
 #! /bin/sh
 
-show_help() {
-	echo -e "-h, --help		- show this message\n"
-	echo "Create slack-desk in source directory:"
-	echo -e "\tcreatepackfromsrc [path/]name_src_archive -csd|--create-slack-desc\n"
-	echo "Create doinst.sh in source directory:"
-	echo -e "\tcreatepackfromsrc [path/]name_src_archive -cdi|--create-doinst\n"
-	echo "Create package from source:"
-	echo -e "\tcreatepackfromsrc [path/]name_src_archive param_configure|no [outputdir]"
-	echo -e "\t outputdir not specified, the package will be created in /tmp\n"
+showHelp() {
+cat << EOF
+Usage: $(basename $0) archive mode [output]
+
+-h, --help  - Show this message
+
+archive     - Name of source files archive in the current directory.
+                Should be in this format: name-version.tar.(gz|xz|bz2)
+
+Parameter mode can be 3 types:
+-s          - Create slack-desc file
+-d          - Create doinst.sh file
+string      - Configure options. For example:
+                "--prefix=/usr --libdir=/usr/lib64 --enable-static=yes"
+                "no" - without parameters
+output      - Package will be created in otput dir (only with string config).
+                If output not specified, the package will be created in /tmp
+EOF
+
+    exit
 }
 
-create_slack_desc() {
-	SD=$SRCDIR/slack-desc
-	echo "Creating file: $SD"
+createSlackDesc() {
+    SD=${CWD}/slack-desc
+    echo "Creating file: ${SD}"
 
-	echo "# HOW TO EDIT THIS FILE:" > $SD
-	echo "# The "handy ruler" below makes it easier to edit a package description.  Line" >> $SD
-	echo "# up the first '|' above the ':' following the base package name, and the '|' on" >> $SD
-	echo "# the right side marks the last column you can put a character in.  You must make" >> $SD
-	echo "# exactly 11 lines for the formatting to be correct.  It's also customary to" >> $SD
-	echo "# leave one space after the ':'." >> $SD
-	echo >> $SD
-	echo "          |-----handy-ruler------------------------------------------------------|" >> $SD
-	echo "$PKGNAME: " >> $SD
-	echo "$PKGNAME: " >> $SD
-	echo "$PKGNAME: " >> $SD
-	echo "$PKGNAME: " >> $SD
-	echo "$PKGNAME: " >> $SD
-	echo "$PKGNAME: " >> $SD
-	echo "$PKGNAME: " >> $SD
-	echo "$PKGNAME: " >> $SD
-	echo "$PKGNAME: " >> $SD
-	echo "$PKGNAME: " >> $SD
-	echo -e "$PKGNAME: \n" >> $SD
+cat << EOF > ${SD}
+# HOW TO EDIT THIS FILE:
+# The "handy ruler" below makes it easier to edit a package description.  Line
+# up the first '|' above the ':' following the base package name, and the '|'
+# on" the right side marks the last column you can put a character in.
+# You must make exactly 11 lines for the formatting to be correct.  It's also
+# customary to leave one space after the ':'."
 
-	echo Done
+        |-----handy-ruler------------------------------------------------------|
+$PKGNAME:
+$PKGNAME:
+$PKGNAME:
+$PKGNAME:
+$PKGNAME:
+$PKGNAME:
+$PKGNAME:
+$PKGNAME:
+$PKGNAME:
+$PKGNAME:
+$PKGNAME:
+EOF
+    echo Done
+    exit
 }
 
-create_doinst() {
-	DI=$SRCDIR/doinst.sh
-	echo "Creating file: $DI"
+createDoinst() {
+    DI=${CWD}/doinst.sh
+    echo "Creating file: ${DI}"
 
-	echo "# Update the desktop database:" > $DI
-	echo "if [ -x usr/bin/update-desktop-database ]; then" >> $DI
-	echo -e "\tchroot . /usr/bin/update-desktop-database usr/share/applications > /dev/null 2>&1" >> $DI
-	echo -e "fi\n" >> $DI
-	echo "# Update hicolor theme cache:" >> $DI
-	echo "if [ -e usr/share/icons/hicolor/icon-theme.cache ]; then" >> $DI
-	echo -e "\tif [ -x usr/bin/gtk-update-icon-cache ]; then" >> $DI
-	echo -e "\t\tchroot . /usr/bin/gtk-update-icon-cache /usr/share/icons/hicolor >/dev/null 2>&1" >> $DI
-	echo -e "\tfi" >> $DI
-	echo -e "fi\n" >> $DI
-	echo "#Update the mime database:" >> $DI
-	echo "if [ -x usr/bin/update-mime-database ]; then" >> $DI
-	echo -e "\tchroot . /usr/bin/update-mime-database usr/share/mime >/dev/null 2>&1" >> $DI
-	echo -e "fi\n" >> $DI
+cat << EOF > ${DI}
+# Update the desktop database:
+if [ -x /usr/bin/update-desktop-database ]; then
+    /usr/bin/update-desktop-database /usr/share/applications >/dev/null 2>&1
+fi
 
-	echo Done
-}
+# Update hicolor theme cache:
+if [ -e /usr/share/icons/hicolor/icon-theme.cache ]; then
+    if [ -x /usr/bin/gtk-update-icon-cache ]; then
+        /usr/bin/gtk-update-icon-cache /usr/share/icons/hicolor >/dev/null 2>&1
+    fi
+fi
 
-setLine() {
-	COLOR="1;31"
-	SLEEP=
-	if [ "$1" = "1" ]; then
-		COLOR="0;0"
-		SLEEP="1"
-	fi
-	echo -e "\033[0;32m=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+\033[${COLOR}m"
-	[ ! -z $SLEEP ] && sleep 2
+# Update the mime database:
+if [ -x /usr/bin/update-mime-database ]; then
+    /usr/bin/update-mime-database /usr/share/mime >/dev/null 2>&1
+fi
+
+EOF
+    echo Done
+    exit
 }
 
 configure() {
-	setLine
-	echo "./configure $PARAMCONFIG"
-	setLine 1
-	CFLAGS="$SLKCFLAGS" \
-	CXXFLAGS="$SLKCFLAGS" \
-	./configure $PARAMCONFIG
+    CFLAGS="$SLKCFLAGS" \
+    CXXFLAGS="$SLKCFLAGS" \
+    ./configure $PARAMCONFIG
 }
 
-ERROR="-h or --help for more information"
-COUNTP=$#
-
-if [[ $COUNTP -eq 0 || $COUNTP -gt 3 ]]; then
-	echo $ERROR
-	exit 1
+# параметров не 2 и не 3
+if ! [ $# = 2 -o $# = 3 ]; then
+    showHelp
 fi
 
-if [ $COUNTP -eq 1 ]; then
-	case $1 in
-		-h|--help) show_help && exit 0;;
-		*) echo $ERROR && exit 1;
-	esac
+# проверяем первый параметр (имя файла архива с исходниками)
+SRCNAME=$(basename $1 2>/dev/null)
+if [ -z ${SRCNAME} ]; then
+    echo -e "\033[0;31mIncorrect file name:\033[0m $1"
+    exit
 fi
 
-CWD=$(pwd)
-SRC=$1
-case $SRC in
-	/*)	;;
-	*) SRC=$CWD/$SRC
-esac
-
-if ! [ -f $SRC ]; then
-	echo -e "No such file: $1\n$ERROR"
-	exit 1
+if ! [ -f ${SRCNAME} ]; then
+    echo -en "\033[0;31mError:\033[0m File \033[1;34m${SRCNAME}\033[0m "
+    echo -e "not found in the current directory (-h or --help for help)"
+    exit
 fi
 
-SRCNAME=$(basename $SRC)
-SRCDIR=$(dirname $SRC)
+if ! echo ${SRCNAME} | grep -qE "\.tar\.(g|b|x)z2?$"; then
+    echo -en "File \033[1;34m${SRCNAME}\033[0m is not an archive on format "
+    echo "tar.gz, tar.xz or tar.bz2"
+    exit
+fi
+
 PKGNAME=$(echo $SRCNAME | rev | cut -f 3- -d . | cut -f 2- -d - | rev)
 PKGVER=$(echo $SRCNAME | rev | cut -f 3- -d . | cut -f 1 -d - | rev)
-TYPESRC=$(echo $SRCNAME | rev | cut -f -2 -d . | rev)
+if [ -z ${PKGNAME} -o -z ${PKGVER} ] || [ "${PKGNAME}" = "${PKGVER}" ]; then
+    echo "Name of archive source files hould be in this format:"
+    echo "    name-version.tar.(gz|xz|bz2)"
+    exit
+fi
+
 BUILD="myreq"
+PKGTYPE=${PKGTYPE:-txz}
 
 if [ -z "$ARCH" ]; then
-  case "$( uname -m )" in
-    i?86) ARCH=i486 ;;
-    arm*) ARCH=arm ;;
-       *) ARCH=$( uname -m ) ;;
+  case "$(uname -m)" in
+    i?86)
+        ARCH=i486
+        ;;
+    arm*)
+        ARCH=arm
+        ;;
+    *)
+       ARCH=$(uname -m)
+       ;;
   esac
 fi
 
 if [ $ARCH = "i486" ]; then
-  SLKCFLAGS="-O2 -march=i486 -mtune=i686"
-  LIBDIRSUFFIX=""
-elif [ $ARCH = "i686" ]; then
-  SLKCFLAGS="-O2 -march=i686 -mtune=i686"
-  LIBDIRSUFFIX=""
+    SLKCFLAGS="-O2 -march=i486 -mtune=i686"
+    LIBDIRSUFFIX=""
 elif [ $ARCH = "x86_64" ]; then
-  SLKCFLAGS="-O2 -fPIC"
-  LIBDIRSUFFIX="64"
+    SLKCFLAGS="-O2 -fPIC"
+    LIBDIRSUFFIX="64"
 else
-  SLKCFLAGS="-O2"
-  LIBDIRSUFFIX=""
+    SLKCFLAGS="-O2"
+    LIBDIRSUFFIX=""
 fi
 
-if [ $COUNTP -eq 2 ]; then
-	case $2 in
-		-csd|--create-slack-desc) create_slack_desc && exit 0;;
-		-cdi|--create-doinst) create_doinst && exit 0;;
-	esac
+CWD=$(pwd)
+if [ $# -eq 2 ]; then
+    case $2 in
+        -s)
+            createSlackDesc
+            ;;
+        -d)
+            createDoinst
+            ;;
+    esac
 fi
 
-PARAMCONFIG=""
-if ! [ "$2" = "no" ]; then
-	PARAMCONFIG=$2
+PARAMCONFIG=$2
+if [ "$2" = "no" ]; then
+    PARAMCONFIG=""
 fi
 
 OUTPUTDIR="/tmp"
-if [[ $COUNTP -eq 3 && -d $3 ]]; then
-	OUTPUTDIR=$(echo $3 | sed 's/\/$//')
-	case $OUTPUTDIR in
-		/*)	;;
-		*) OUTPUTDIR=$CWD/$OUTPUTDIR
-	esac
-elif [ $COUNTP -eq 3 ]; then
-	echo -e "No such directory: $3\n$ERROR"
-	exit 1
+if [ -d "$3" ]; then
+    OUTPUTDIR=$(echo $3 | sed 's/\/$//')
+    case ${OUTPUTDIR} in
+        /*) # полный путь
+            ;;
+        *)  # относительный путь
+            OUTPUTDIR=${CWD}/${OUTPUTDIR}
+            ;;
+    esac
+elif [ $# -eq 3 ]; then
+    echo -e "\033[0;31mNo such directory:\033[0m $3"
+    exit
 fi
 
-if ! [ -f $SRCDIR/slack-desc ]; then
-	echo "Missing file: $SRCDIR/slack-desc"
-	echo "$ERROR"
-	exit 1
+if ! [ -f ${CWD}/slack-desc ]; then
+    echo -e "\033[0;31mMissing file:\033[0m ${CWD}/slack-desc"
+    echo "-h or --help for help"
+    exit
 fi
 
-if ! [ -f $SRCDIR/doinst.sh ]; then
-	echo "Missing file: $SRCDIR/doinst.sh"
-	echo "$ERROR"
-	exit 1
+if ! [ -f ${CWD}/doinst.sh ]; then
+    echo -e "\033[0;31mMissing file:\033[0m ${CWD}/doinst.sh"
+    echo "-h or --help for help"
+    exit
 fi
 
 rm -rf $OUTPUTDIR/$PKGNAME-build
-mkdir -p $OUTPUTDIR/$PKGNAME-build/$PKGNAME/
+mkdir -p $OUTPUTDIR/$PKGNAME-build/$PKGNAME
 cd $OUTPUTDIR/$PKGNAME-build
 
-setLine
-echo "Unpack archive $SRC in $OUTPUTDIR/$PKGNAME-build"
-setLine 1
-
-if [[ "$TYPESRC" != "tar.gz" && "$TYPESRC" != "tar.bz2" && "$TYPESRC" != "tar.xz" ]]; then
-	echo "Can't unpack $SRCNAME. Extension should be *.tar.gz, *.tar.bz2 or *.tar.xz"
-	exit 1
-fi
-
-[ "$TYPESRC" = "tar.gz" ] && tar -xvzf $SRC
-[ "$TYPESRC" = "tar.bz2" ] && tar -xvjf $SRC
-[ "$TYPESRC" = "tar.xz" ] && tar -xvJf $SRC
+TYPESRC=$(echo $SRCNAME | rev | cut -f 1 -d . | rev)
+[ "${TYPESRC}" = "gz" ] && tar -xvzf ${CWD}/${SRCNAME}
+[ "${TYPESRC}" = "bz2" ] && tar -xvjf ${CWD}/${SRCNAME}
+[ "${TYPESRC}" = "xz" ] && tar -xvJf ${CWD}/${SRCNAME}
 
 cd $PKGNAME-$PKGVER
 
 chown -R root:root .
-find . \( -perm 777 -o -perm 775 -o -perm 711 -o -perm 555 -o -perm 511 \) -exec chmod 755 {} \; -o \
-\( -perm 666 -o -perm 664 -o -perm 600 -o -perm 444 -o -perm 440 -o -perm 400 \) -exec chmod 644 {} \;
+find . \( \
+    -perm 777 -o \
+    -perm 775 -o \
+    -perm 711 -o \
+    -perm 555 -o \
+    -perm 511 \) -exec chmod 755 {} \;
+find . \( \
+    -perm 666 -o \
+    -perm 664 -o \
+    -perm 600 -o \
+    -perm 444 -o \
+    -perm 440 -o \
+    -perm 400 \) -exec chmod 644 {} \;
 
 if [ -x ./configure ]; then
-	configure
+    configure
 elif [ -x ./autogen.sh ]; then
-	setLine
-	echo "./autogen.sh"
-	setLine 1
-	./autogen.sh
-	configure
+    ./autogen.sh
+    configure
+else
+    autoreconf -f -i && configure
 fi
 
 if [ -f ./Makefile ]; then
-	setLine
-	echo "make"
-	setLine 1
-	make || exit 1
+    make || exit
 else
-	setLine
-	echo "cmake "-DCMAKE_C_FLAGS="$SLKCFLAGS" -DCMAKE_CXX_FLAGS="$SLKCFLAGS" -DLIB_SUFFIX="$LIBDIRSUFFIX" -DCMAKE_INSTALL_PREFIX=/usr
-	setLine 1
-	mkdir build
-	cd build
-	cmake \
-	-DCMAKE_C_FLAGS="$SLKCFLAGS" \
-	-DCMAKE_CXX_FLAGS="$SLKCFLAGS" \
-	-DLIB_SUFFIX="$LIBDIRSUFFIX" \
-	-DCMAKE_INSTALL_PREFIX=/usr ..
-	setLine
-	echo "make"
-	setLine 1
-	make || exit 1
+    mkdir build
+    cd build
+    cmake \
+    -DCMAKE_C_FLAGS="$SLKCFLAGS" \
+    -DCMAKE_CXX_FLAGS="$SLKCFLAGS" \
+    -DLIB_SUFFIX="$LIBDIRSUFFIX" \
+    -DCMAKE_INSTALL_PREFIX=/usr ..
+    make || exit
 fi
 
-setLine
-echo "make install DESTDIR=$OUTPUTDIR/$PKGNAME-build/$PKGNAME"
-setLine 1
-make install DESTDIR=$OUTPUTDIR/$PKGNAME-build/$PKGNAME || exit 1
-
+make install DESTDIR=$OUTPUTDIR/$PKGNAME-build/$PKGNAME || exit
 
 cd $OUTPUTDIR/$PKGNAME-build/$PKGNAME
-mkdir install && cp $SRCDIR/{slack-desc,doinst.sh} install
+mkdir install && cp ${CWD}/{slack-desc,doinst.sh} install
 
 mkdir -p usr/doc/$PKGNAME-$PKGVER
-find $OUTPUTDIR/$PKGNAME-build/$PKGNAME-$PKGVER -maxdepth 1 -type f -a \
-\( -iname 'AUTHORS' -o -iname 'COPYING' -o -iname 'ChangeLog' \
--o -iname 'INSTALL' -o -iname 'NEWS' -o -iname 'README' -o -iname 'TODO*' -o -iname 'MANIFEST' \) \
--exec cp {} usr/doc/$PKGNAME-$PKGVER \;
+find $OUTPUTDIR/$PKGNAME-build/$PKGNAME-$PKGVER -maxdepth 1 -type f -a \( \
+    -iname 'AUTHORS' -o \
+    -iname 'COPYING' -o \
+    -iname 'ChangeLog' -o \
+    -iname 'INSTALL' -o \
+    -iname 'NEWS' -o \
+    -iname 'README' -o \
+    -iname 'TODO*' -o \
+    -iname 'MANIFEST' \
+    \) -exec cp {} usr/doc/$PKGNAME-$PKGVER \;
 
-setLine
-echo "Creating package $PKGNAME-$PKGVER-$ARCH-$BUILD.txz"
-setLine 1
-/sbin/makepkg -l y -c n $OUTPUTDIR/$PKGNAME-$PKGVER-$ARCH-$BUILD.txz
+/sbin/makepkg -l y -c n $OUTPUTDIR/$PKGNAME-$PKGVER-$ARCH-$BUILD.${PKGTYPE}
 
