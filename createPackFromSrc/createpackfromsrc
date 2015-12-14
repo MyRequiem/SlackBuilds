@@ -1,5 +1,7 @@
 #! /bin/sh
 
+# https://github.com/MyRequiem/SlackBuilds/tree/master/createPackFromSrc
+
 showHelp() {
 cat << EOF
 Usage: $(basename $0) archive mode [output]
