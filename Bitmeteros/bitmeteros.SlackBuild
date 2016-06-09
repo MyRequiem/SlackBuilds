@@ -10,7 +10,7 @@ TMP=${TMP:-/tmp}
 BUILD=$TMP/build-${PRGNAM}
 PKG=$BUILD/package-${PRGNAM}
 OUTPUT=${OUTPUT:-/tmp}
-TAG=${TAG:-myreq}
+TAG=${TAG:-1myreq}
 PKGTYPE=${PKGTYPE:-txz}
 
 if [ -z "${ARCH}" ]; then
