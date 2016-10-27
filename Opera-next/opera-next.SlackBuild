@@ -43,10 +43,7 @@ rm -rf $PKG
 mkdir -p $TMP $PKG $OUTPUT
 cd $PKG
 
-
-ar p ${CWD}/opera-stable_${VERSION}_amd64.deb data.tar.xz | xz -d | tar xv
-# or
-# ar p ${CWD}/opera-stable_${VERSION}_amd64.deb data.tar.xz | tar xvJ
+ar p ${CWD}/opera-stable_${VERSION}_amd64.deb data.tar.xz | tar xvJ
 
 chown -R root:root .
 chmod -R u+w,go+r-w,a-s .
@@ -56,6 +53,9 @@ chmod 0755 .
 mkdir -p opt/${PKGNAM}
 mv usr/lib/${ARCH}-linux-gnu/opera opt/${PKGNAM}/
 rm -rf usr/lib
+
+# disable autoupdater
+rm -f opt/opera-next/opera/opera_autoupdate*
 
 # docs
 mv usr/share/doc usr/
@@ -101,4 +101,3 @@ cat ${CWD}/doinst.sh > install/doinst.sh
 cat ${CWD}/slack-desc > install/slack-desc
 
 /sbin/makepkg -l y -c n ${OUTPUT}/${PKGNAM}-${VERSION}-${ARCH}-${BUILD}.txz
-
