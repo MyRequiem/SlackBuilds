@@ -241,18 +241,26 @@ fi
 make install DESTDIR=$OUTPUTDIR/$PKGNAME-build/$PKGNAME || exit
 
 cd $OUTPUTDIR/$PKGNAME-build/$PKGNAME
-mkdir install && cp ${CWD}/{slack-desc,doinst.sh} install
+mkdir install
+# если doinst.sh не пустой
+if [ $(stat -c%s doinst.sh) != "0" ]; then
+    cp ${CWD}/doinst.sh install
+fi
+cp ${CWD}/slack-desc install
 
+# docs
 mkdir -p usr/doc/$PKGNAME-$PKGVER
+cp ${CWD}/slack-desc usr/doc/$PKGNAME-$PKGVER
 find $OUTPUTDIR/$PKGNAME-build/$PKGNAME-$PKGVER -maxdepth 1 -type f -a \( \
-    -iname 'AUTHORS' -o \
-    -iname 'COPYING' -o \
-    -iname 'ChangeLog' -o \
-    -iname 'INSTALL' -o \
-    -iname 'NEWS' -o \
-    -iname 'README' -o \
-    -iname 'TODO*' -o \
-    -iname 'MANIFEST' \
+    -iname '*AUTHORS*' -o \
+    -iname '*COPYING*' -o \
+    -iname '*ChangeLog*' -o \
+    -iname '*INSTALL*' -o \
+    -iname '*NEWS*' -o \
+    -iname '*README*' -o \
+    -iname '*TODO*' -o \
+    -iname '*MANIFEST*' -o \
+    -iname '*version*' \
     \) -exec cp {} usr/doc/$PKGNAME-$PKGVER \;
 
 /sbin/makepkg -l y -c n $OUTPUTDIR/$PKGNAME-$PKGVER-$ARCH-$BUILD.${PKGTYPE}
