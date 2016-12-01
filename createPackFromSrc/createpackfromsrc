@@ -1,10 +1,8 @@
 #! /bin/sh
 
-# https://github.com/MyRequiem/SlackBuilds/tree/master/createPackFromSrc
-
 showHelp() {
 cat << EOF
-Usage: $(basename $0) archive mode [output]
+Usage: $(basename "$0") archive mode [output]
 
 -h, --help  - Show this message
 
@@ -28,7 +26,7 @@ createSlackDesc() {
     SD=${CWD}/slack-desc
     echo "Creating file: ${SD}"
 
-cat << EOF > ${SD}
+cat << EOF > "${SD}"
 # HOW TO EDIT THIS FILE:
 # The "handy ruler" below makes it easier to edit a package description.  Line
 # up the first '|' above the ':' following the base package name, and the '|'
@@ -57,7 +55,7 @@ createDoinst() {
     DI=${CWD}/doinst.sh
     echo "Creating file: ${DI}"
 
-cat << EOF > ${DI}
+cat << EOF > "${DI}"
 # Update the desktop database:
 if [ -x /usr/bin/update-desktop-database ]; then
     /usr/bin/update-desktop-database /usr/share/applications >/dev/null 2>&1
@@ -81,38 +79,38 @@ EOF
 }
 
 configure() {
-    CFLAGS="$SLKCFLAGS" \
-    CXXFLAGS="$SLKCFLAGS" \
-    ./configure $PARAMCONFIG
+    CFLAGS="${SLKCFLAGS}" \
+    CXXFLAGS="${SLKCFLAGS}" \
+    ./configure "${PARAMCONFIG}"
 }
 
-# параметров не 2 и не 3
-if ! [ $# = 2 -o $# = 3 ]; then
+if [ $# != 2 ] || [ $# != 3 ]; then
     showHelp
 fi
 
-# проверяем первый параметр (имя файла архива с исходниками)
-SRCNAME=$(basename $1 2>/dev/null)
-if [ -z ${SRCNAME} ]; then
+SRCNAME=$(basename "$1" 2>/dev/null)
+if [ -z "${SRCNAME}" ]; then
     echo -e "\033[0;31mIncorrect file name:\033[0m $1"
     exit
 fi
 
-if ! [ -f ${SRCNAME} ]; then
+if ! [ -f "${SRCNAME}" ]; then
     echo -en "\033[0;31mError:\033[0m File \033[1;34m${SRCNAME}\033[0m "
     echo -e "not found in the current directory (-h or --help for help)"
     exit
 fi
 
-if ! echo ${SRCNAME} | grep -qE "\.tar\.(g|b|x)z2?$"; then
+if ! echo "${SRCNAME}" | grep -qE "\.tar\.(g|b|x)z2?$"; then
     echo -en "File \033[1;34m${SRCNAME}\033[0m is not an archive on format "
     echo "tar.gz, tar.xz or tar.bz2"
     exit
 fi
 
-PKGNAME=$(echo $SRCNAME | rev | cut -f 3- -d . | cut -f 2- -d - | rev)
-PKGVER=$(echo $SRCNAME | rev | cut -f 3- -d . | cut -f 1 -d - | rev)
-if [ -z ${PKGNAME} -o -z ${PKGVER} ] || [ "${PKGNAME}" = "${PKGVER}" ]; then
+PKGNAME=$(echo "$SRCNAME" | rev | cut -f 3- -d . | cut -f 2- -d - | rev)
+PKGVER=$(echo "$SRCNAME" | rev | cut -f 3- -d . | cut -f 1 -d - | rev)
+if [ -z "${PKGNAME}" ] || \
+        [ -z "${PKGVER}" ] || \
+        [ "${PKGNAME}" = "${PKGVER}" ]; then
     echo "Name of archive source files hould be in this format:"
     echo "    name-version.tar.(gz|xz|bz2)"
     exit
@@ -135,10 +133,10 @@ if [ -z "$ARCH" ]; then
   esac
 fi
 
-if [ $ARCH = "i486" ]; then
+if [ "$ARCH" = "i486" ]; then
     SLKCFLAGS="-O2 -march=i486 -mtune=i686"
     LIBDIRSUFFIX=""
-elif [ $ARCH = "x86_64" ]; then
+elif [ "$ARCH" = "x86_64" ]; then
     SLKCFLAGS="-O2 -fPIC"
     LIBDIRSUFFIX="64"
 else
@@ -165,11 +163,11 @@ fi
 
 OUTPUTDIR="/tmp"
 if [ -d "$3" ]; then
-    OUTPUTDIR=$(echo $3 | sed 's/\/$//')
+    OUTPUTDIR=$(echo "$3" | sed 's/\/$//')
     case ${OUTPUTDIR} in
-        /*) # полный путь
+        /*) # full pass
             ;;
-        *)  # относительный путь
+        *)  # relative path
             OUTPUTDIR=${CWD}/${OUTPUTDIR}
             ;;
     esac
@@ -178,28 +176,28 @@ elif [ $# -eq 3 ]; then
     exit
 fi
 
-if ! [ -f ${CWD}/slack-desc ]; then
+if ! [ -f "${CWD}"/slack-desc ]; then
     echo -e "\033[0;31mMissing file:\033[0m ${CWD}/slack-desc"
     echo "-h or --help for help"
     exit
 fi
 
-if ! [ -f ${CWD}/doinst.sh ]; then
+if ! [ -f "${CWD}"/doinst.sh ]; then
     echo -e "\033[0;31mMissing file:\033[0m ${CWD}/doinst.sh"
     echo "-h or --help for help"
     exit
 fi
 
-rm -rf $OUTPUTDIR/$PKGNAME-build
-mkdir -p $OUTPUTDIR/$PKGNAME-build/$PKGNAME
-cd $OUTPUTDIR/$PKGNAME-build
+rm -rf "${OUTPUTDIR}"/"${PKGNAME}"-build
+mkdir -p "${OUTPUTDIR}"/"${PKGNAME}"-build/"${PKGNAME}"
+cd "${OUTPUTDIR}"/"${PKGNAME}"-build || exit 1
 
-TYPESRC=$(echo $SRCNAME | rev | cut -f 1 -d . | rev)
-[ "${TYPESRC}" = "gz" ] && tar -xvzf ${CWD}/${SRCNAME}
-[ "${TYPESRC}" = "bz2" ] && tar -xvjf ${CWD}/${SRCNAME}
-[ "${TYPESRC}" = "xz" ] && tar -xvJf ${CWD}/${SRCNAME}
+TYPESRC=$(echo "$SRCNAME" | rev | cut -f 1 -d . | rev)
+[ "${TYPESRC}" = "gz" ] && tar -xvzf "${CWD}"/"${SRCNAME}"
+[ "${TYPESRC}" = "bz2" ] && tar -xvjf "${CWD}"/"${SRCNAME}"
+[ "${TYPESRC}" = "xz" ] && tar -xvJf "${CWD}"/"${SRCNAME}"
 
-cd $PKGNAME-$PKGVER
+cd "${PKGNAME}"-"${PKGVER}" || exit 1
 
 chown -R root:root .
 find . \( \
@@ -229,29 +227,30 @@ if [ -f ./Makefile ]; then
     make || exit
 else
     mkdir build
-    cd build
+    cd build || exit 1
     cmake \
-    -DCMAKE_C_FLAGS="$SLKCFLAGS" \
-    -DCMAKE_CXX_FLAGS="$SLKCFLAGS" \
-    -DLIB_SUFFIX="$LIBDIRSUFFIX" \
+    -DCMAKE_C_FLAGS="${SLKCFLAGS}" \
+    -DCMAKE_CXX_FLAGS="${SLKCFLAGS}" \
+    -DLIB_SUFFIX="${LIBDIRSUFFIX}" \
     -DCMAKE_INSTALL_PREFIX=/usr ..
     make || exit
 fi
 
-make install DESTDIR=$OUTPUTDIR/$PKGNAME-build/$PKGNAME || exit
+make install DESTDIR="${OUTPUTDIR}"/"${PKGNAME}"-build/"${PKGNAME}" || exit
 
-cd $OUTPUTDIR/$PKGNAME-build/$PKGNAME
+cd "${OUTPUTDIR}"/"${PKGNAME}"-build/"${PKGNAME}" || exit 1
 mkdir install
-# если doinst.sh не пустой
-if [ $(stat -c%s doinst.sh) != "0" ]; then
-    cp ${CWD}/doinst.sh install
+# if file size is not zero
+if [ "$(stat -c%s doinst.sh)" != "0" ]; then
+    cp "${CWD}"/doinst.sh install
 fi
-cp ${CWD}/slack-desc install
+cp "${CWD}"/slack-desc install
 
 # docs
-mkdir -p usr/doc/$PKGNAME-$PKGVER
-cp ${CWD}/slack-desc usr/doc/$PKGNAME-$PKGVER
-find $OUTPUTDIR/$PKGNAME-build/$PKGNAME-$PKGVER -maxdepth 1 -type f -a \( \
+mkdir -p usr/doc/"${PKGNAME}"-"${PKGVER}"
+cp "${CWD}"/slack-desc usr/doc/"${PKGNAME}"-"${PKGVER}"
+find "${OUTPUTDIR}"/"${PKGNAME}"-build/"${PKGNAME}"-"${PKGVER}" \
+        -maxdepth 1 -type f -a \( \
     -iname '*AUTHORS*' -o \
     -iname '*COPYING*' -o \
     -iname '*ChangeLog*' -o \
@@ -261,7 +260,7 @@ find $OUTPUTDIR/$PKGNAME-build/$PKGNAME-$PKGVER -maxdepth 1 -type f -a \( \
     -iname '*TODO*' -o \
     -iname '*MANIFEST*' -o \
     -iname '*version*' \
-    \) -exec cp {} usr/doc/$PKGNAME-$PKGVER \;
+    \) -exec cp {} usr/doc/"${PKGNAME}"-"${PKGVER}" \;
 
-/sbin/makepkg -l y -c n $OUTPUTDIR/$PKGNAME-$PKGVER-$ARCH-$BUILD.${PKGTYPE}
-
+/sbin/makepkg -l y -c n \
+    "${OUTPUTDIR}"/"${PKGNAME}"-"${PKGVER}"-"${ARCH}"-"${BUILD}"."${PKGTYPE}"

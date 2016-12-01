@@ -1,8 +1,10 @@
+#! /bin/bash
+
 # create or upgrade database
 DB_FILE=/var/lib/bitmeter/bitmeter.db
 
+# if database already exist
 if [ -f ${DB_FILE} ]; then
-    # if database already exist
     rm -f ${DB_FILE}.new
     bmdb upgrade 7
 else
@@ -35,4 +37,3 @@ EOF
 fi
 
 echo -e "Type in the browser: http://localhost:2605/index.html\n"
-

@@ -5,15 +5,15 @@
 # make exactly 11 lines for the formatting to be correct.  It's also
 # customary to leave one space after the ':'.
 
-             |-----handy-ruler----------------------------------------------------|
-yandex-browser: yandex-browser (Yandex web browser)
-yandex-browser:
-yandex-browser: Fast and secure web browser
-yandex-browser: 
-yandex-browser:
-yandex-browser:
-yandex-browser:
-yandex-browser:
-yandex-browser:
-yandex-browser: Homepage: http://browser.yandex.ru/
-yandex-browser:
+             |-----handy-ruler-------------------------------------------------|
+yandex-browser-beta: yandex-browser-beta (Yandex web browser)
+yandex-browser-beta:
+yandex-browser-beta: Fast and secure web browser
+yandex-browser-beta:
+yandex-browser-beta:
+yandex-browser-beta:
+yandex-browser-beta:
+yandex-browser-beta:
+yandex-browser-beta:
+yandex-browser-beta: Homepage: http://browser.yandex.ru/
+yandex-browser-beta:

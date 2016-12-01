@@ -2,53 +2,59 @@
 
 # only run as root
 if [ ! $UID = 0 ]; then
-	echo This script must be run as root.
-	exit 1
+    echo This script must be run as root.
+    exit 1
 fi
 
 # Yandex.deb not found in the same directory
 if ! /bin/ls Yandex.deb 1> /dev/null 2>&1 ; then
-	cat << EOF
+    cat << EOF
 
-This is a script to repackage a Debian/Ubuntu Yandex Browser .deb package
-for Slackware. Run this script in the same directory whith binary packages
-Yandex.deb
+First, go to http://browser.yandex.ru/
 
-This will create a Slackware .txz package.  Install it with installpkg
-or use upgradepkg to upgrade from a previous version.
+Click the download button. Currently only available beta version x86_64.
+Download the .deb package.
 
 EOF
-	exit 1
+ exit 1
 fi
 
 PKGNAM=yandex-browser
-RELEASE=${RELEASE:-beta}    # stable, beta, or unstable
+RELEASE="beta"  # stable, beta, or unstable
 
 ARCH=$(uname -m)
-if [ ${ARCH} != "x86_64" ]; then
-	echo "Package for $(uname -m) architecture is not available."
-	exit 1
+if [ "${ARCH}" != "x86_64" ]; then
+    echo "Package for $(uname -m) architecture is not available."
+    exit 1
 fi
 
 # Get the version from the Debian/Ubuntu .deb (thanks to Fred Richards):
-VERSION=$(ar p Yandex.deb control.tar.gz 2> /dev/null | tar zxO ./control 2> /dev/null | grep Version | awk '{print $2}' | cut -d- -f1)
+VERSION=$(ar p Yandex.deb control.tar.gz 2> /dev/null | \
+    tar zxO ./control 2> /dev/null | \
+    grep Version | \
+    awk '{print $2}' | \
+    cut -d- -f1)
 BUILD=${BUILD:-1}
-
+TAG=myreq
 CWD=$(pwd)
 TMP=${TMP:-/tmp}
-PKG=$TMP/package-$PKGNAM
+PKG=$TMP/$PKGNAM-build
 OUTPUT=${OUTPUT:-/tmp}
 
-rm -rf $PKG
-mkdir -p $TMP $PKG $OUTPUT
-cd $PKG
-ar p $CWD/Yandex.deb data.tar.lzma | lzma -d | tar xv || exit 1
+rm -rf "${PKG}"
+mkdir -p "${TMP}" "${PKG}" "${OUTPUT}"
+cd "${PKG}" || exit 1
+
+# show content archive:
+#   $ ar t Yandex.deb
+# ar p "${CWD}"/Yandex.deb data.tar.lzma | lzma -d | tar xv || exit 1
+ar p "${CWD}"/Yandex.deb data.tar.xz | tar xJv || exit 1
 chown -R root:root .
 chmod -R u+w,go+r-w,a-s .
 # Make sure top-level perms are correct:
 chmod 0755 .
 # This needs to be setuid root:
-chmod 4755 opt/yandex/browser-beta/yandex_browser-sandbox
+chmod 4755 opt/yandex/browser-${RELEASE}/yandex_browser-sandbox
 # The cron job is for Debian/Ubuntu only:
 rm -rf etc
 
@@ -59,29 +65,38 @@ sed -i 's,libnss3.so.1d,libnss3.so\x00\x00\x00,g;
         s,libssl3.so.1d,libssl3.so\x00\x00\x00,g;
         s,libplds4.so.0d,libplds4.so\x00\x00\x00,g;
         s,libplc4.so.0d,libplc4.so\x00\x00\x00,g;
-        s,libnspr4.so.0d,libnspr4.so\x00\x00\x00,g;' /opt/yandex/browser-beta/yandex-browser-beta
+        s,libnspr4.so.0d,libnspr4.so\x00\x00\x00,g;' \
+            /opt/yandex/browser-beta/yandex-browser-beta
+
+cp "${CWD}"/libffmpeg.so opt/yandex/browser-${RELEASE}/
 
  # --mandir=/usr/man:
-find $PKG/usr/share/man -type f -exec chmod 644 {} \;
-mv $PKG/usr/share/man $PKG/usr/man
+find usr/share/man -type f -exec chmod 644 {} \;
+mv usr/share/man usr/man
 # Compress manual pages:
-find $PKG/usr/man -type f -exec gzip -9 {} \;
-for i in $( find $PKG/usr/man -type l ) ; do
-	ln -s $( readlink $i ).gz $i.gz
-	rm $i
+find usr/man -type f -exec gzip -9 {} \;
+
+links=$(find usr/man -type l)
+for i in ${links}; do
+    ln -s "$(readlink "${i}")".gz "${i}".gz
+    rm "${i}"
 done
 
 # /usr/doc
-mkdir -p $PKG/usr/doc/${PKGNAM}-${VERSION}
-find $PKG/usr/share/doc -type f -exec mv {} $PKG/usr/doc/${PKGNAM}-${VERSION} \;
-rm -rf $PKG/usr/share/doc
+mkdir -p usr/doc/"${PKGNAM}"-"${VERSION}"
+find usr/share/doc -type f -exec \
+    mv {} usr/doc/"${PKGNAM}"-"${VERSION}" \;
+rm -rf usr/share/doc
 
 # Install a .desktop launcher:
-sed -i -e "s#Icon=yandex-browser-${RELEASE}#Icon=/opt/yandex/browser-beta/product_logo_256.png#" \
-  $PKG/usr/share/applications/${PKGNAM}-${RELEASE}.desktop
+sed -i -e "s#Icon=yandex-browser-${RELEASE}#\
+Icon=/opt/yandex/browser-beta/product_logo_256.png#" \
+    usr/share/applications/"${PKGNAM}"-"${RELEASE}".desktop
 
-mkdir -p $PKG/install
-cat $CWD/slack-desc > $PKG/install/slack-desc
+mkdir -p install
+cat "${CWD}"/slack-desc > install/slack-desc
+cat "${CWD}"/doinst.sh > install/doinst.sh
 
-/sbin/makepkg -l y -c n ${OUTPUT}/${PKGNAM}-${VERSION}-${ARCH}-${BUILD}.txz
-
+PKGNAM=${PKGNAM}-${RELEASE}
+/sbin/makepkg -l y -c n \
+    "${OUTPUT}"/"${PKGNAM}"-"${VERSION}"-"${ARCH}"-"${BUILD}""${TAG}".txz
