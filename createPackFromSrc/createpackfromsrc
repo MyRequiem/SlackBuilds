@@ -84,7 +84,7 @@ configure() {
     ./configure "${PARAMCONFIG}"
 }
 
-if [ $# != 2 ] || [ $# != 3 ]; then
+if [[ $# != 2 && $# != 3 ]]; then
     showHelp
 fi
 
