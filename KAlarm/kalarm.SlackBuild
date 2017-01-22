@@ -1,0 +1,109 @@
+#!/bin/sh
+
+# Build kalarm package from kdepim package source code on KDE4
+# author: MyRequiem
+
+chown -R root:root .
+
+PKGNAME=kalarm
+# mount point slackware iso-image with source code
+KDESRCPATH="/mnt/src/source/kde"
+# kalarm contained in a kdepim package
+SRCNAME=kdepim
+# path to kdepim*.tar.?z* source archive
+SRCARCH=$(find ${KDESRCPATH}/src/ -type f -name "${SRCNAME}-*.tar.?z*" |
+    /usr/bin/grep -v runtime)
+
+CWD=$(pwd)
+TMP=/tmp/$PKGNAME-build
+PKG=${TMP}/${PKGNAME}-package
+TAG=${TAG:-myreq}
+PKGTYPE=${PKGTYPE:-txz}
+OUTPUT=${OUTPUT:-/root/src}
+
+# determine variables:
+# ARCH, BUILD, SLKCFLAGS, LIBDIRSUFFIX, NUMJOBS, KDE_OPT_ARGS
+if [ -r ${KDESRCPATH}/KDE.options ]; then
+    source ${KDESRCPATH}/KDE.options
+else
+    echo "${KDESRCPATH}/KDE.options not found"
+    exit 1
+fi
+
+# override build number and NUMJOBS
+BUILD="1"
+NUMJOBS="-j4"
+
+rm -rf ${TMP}
+mkdir -p "${PKG}" "${OUTPUT}"
+
+cd $TMP || exit 1
+# unpack source archive
+tar xvf "${SRCARCH}"
+cd ${SRCNAME}* || exit 1
+
+# set permissions
+chown -R root:root .
+find . \( -perm 777 -o -perm 775 -o -perm 711 -o -perm 555 -o -perm 511 \) \
+    -exec chmod 755 {} \;
+find . \( -perm 666 -o -perm 664 -o -perm 600 -o -perm 444 -o -perm 440 -o \
+    -perm 400 \) -exec chmod 644 {} \;
+chmod -R u+w,go+r-w,a-s .
+
+# configure all kdepim programs
+if [ -r ${KDESRCPATH}/cmake/${SRCNAME} ]; then
+    source ${KDESRCPATH}/cmake/${SRCNAME}
+elif [ -r ${KDESRCPATH}/cmake/cmake ]; then
+    source ${KDESRCPATH}/cmake/cmake
+else
+    echo -n "No cmake parameter found in "${KDESRCPATH}/cmake/" "
+    echo "for configure kdepim package"
+    exit 1
+fi
+
+# after configure we are already at "build" directory
+# kalarm requires libkdepim, build it:
+(
+    cd libkdepim || exit 1
+    make "${NUMJOBS}" || make || exit 1
+    make install DESTDIR=$PKG || exit 1
+)
+
+# build kalarm
+(
+    cd kalarm || exit 1
+    make "${NUMJOBS}" || make || exit 1
+    make install DESTDIR=$PKG || exit 1
+)
+
+# strip binaries and shared objects
+find ${PKG} -type f -exec file {} \; | grep "executable" | grep ELF | \
+    cut -f 1 -d : | xargs -r strip --strip-unneeded 2> /dev/null || true
+find ${PKG} -type f -exec file {} \; | grep "shared object" | grep ELF | \
+    cut -f 1 -d : | xargs -r strip --strip-unneeded 2> /dev/null || true
+
+# go to kalarm souce code directory
+cd ../kalarm || exit 1
+# determine kalarm version
+KALARMVER=$(grep Version Changelog | head -n 1 | cut -d " " -f 3)
+
+# add documentation files
+DOCDIR=${PKG}/usr/doc/"${PKGNAME}"-"${KALARMVER}"
+mkdir -p "${DOCDIR}"/SlackBuild
+DOCFILES="ACKNOWLEDGEMENTS AUTHORS COPYING Changelog Changelog \
+    Changelog.txt README"
+for DOCFILE in $DOCFILES; do
+    [ -r "${DOCFILE}" ] && cp "${DOCFILE}" "${DOCDIR}"
+done
+cp "${CWD}"/{${PKGNAME}.SlackBuild,doinst.sh,slack-desc} "${DOCDIR}/SlackBuild"
+
+cd "${PKG}" || exit 1
+mkdir install
+cp "${CWD}"/{doinst.sh,slack-desc} install/
+
+# remove autostart directory
+rm -rf usr/share/autostart
+
+# make kalarm package
+/sbin/makepkg -l y -c n "${OUTPUT}"/"${PKGNAME}"-"${KALARMVER}"-"${ARCH}"-\
+"${BUILD}""${TAG}"."${PKGTYPE}"

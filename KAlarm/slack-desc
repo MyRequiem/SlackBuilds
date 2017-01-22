@@ -1,0 +1,19 @@
+# HOW TO EDIT THIS FILE:
+# The "handy ruler" below makes it easier to edit a package description.  Line
+# up the first '|' above the ':' following the base package name, and the '|'
+# on the right side marks the last column you can put a character in.  You must
+# make exactly 11 lines for the formatting to be correct.  It's also
+# customary to leave one space after the ':'.
+
+      |-----handy-ruler--------------------------------------------------------|
+kalarm: KAlarm (KDE4 Personal Alarm Message Scheduler)
+kalarm:
+kalarm:
+kalarm: KAlarm is  a personal alarm message, command and email scheduler for
+kalarm: GNU/Linux and Unix. You can schedule alarm messages to pop up on the
+kalarm: screen (with  sound  if  desired), or you can schedule audio to play
+kalarm: commands to execute or emails to send.
+kalarm:
+kalarm:
+kalarm: https://www.kde.org/applications/utilities/kalarm/
+kalarm:
