@@ -1,0 +1,81 @@
+#!/bin/sh
+
+set -e
+
+# check npm command
+if ! which npm 1>/dev/null 2>&1; then
+    echo "npm: command not found."
+    echo "You need to install nodejs package from SBo repository."
+    exit 1
+fi
+
+PRGNAM="$1"
+# check param (node module name)
+if [ "${PRGNAM}" == "" ] || \
+        [ "${PRGNAM}" == "--help" ] || \
+        [ "${PRGNAM}" == "-h" ]; then
+    echo "Usage: $(basename "$0") module_name"
+    exit 0
+fi
+
+BUILD=1
+TAG=myreq
+OUTPUT=/root/src
+TMP=/tmp/npm-build/
+
+rm -rf "$TMP"
+mkdir -p "$TMP"
+mkdir -p "${OUTPUT}"
+
+cd "$TMP" || exit 1
+
+DESTDIR=./ npm install -g "$PRGNAM" || exit 1
+
+ARCH=""
+[ "$(uname -m)" == "x86_64" ] && ARCH="64"
+
+if [ -n "${ARCH}" ]; then
+    mv usr/lib usr/lib64
+    (
+        cd usr/bin
+        FILES=$(ls)
+        for FILE in ${FILES}; do
+            if [ -L "${FILE}" ]; then
+                TARGET=$(readlink "${FILE}")
+                rm "${FILE}"
+                ln -s "$(echo "${TARGET}" | sed -e 's/\/lib\//\/lib64\//g')" \
+                    "${FILE}"
+            fi
+        done
+    )
+fi
+
+JSON=usr/lib${ARCH}/node_modules/${PRGNAM}/package.json
+VERSION=$(grep -i "\"version\":" "${JSON}" | cut -d \" -f 4 | tr - .)
+DESCRIPTION=$(grep -i "\"description\":" "${JSON}" | cut -d \" -f 4)
+HOMEPAGE=$(grep -i "\"homepage\":" "${JSON}" | cut -d \" -f 4)
+
+mkdir install
+cat << EOF > install/slack-desc
+# HOW TO EDIT THIS FILE:
+# The "handy ruler" below makes it easier to edit a package description.  Line
+# up the first '|' above the ':' following the base package name, and the '|'
+# on the right side marks the last column you can put a character in.  You must
+# make exactly 11 lines for the formatting to be correct.  It's also
+# customary to leave one space after the ':'.
+       |-----handy-ruler------------------------------------------------------|
+$PRGNAM: $PRGNAM
+$PRGNAM:
+$PRGNAM:
+$PRGNAM: $DESCRIPTION
+$PRGNAM:
+$PRGNAM:
+$PRGNAM:
+$PRGNAM:
+$PRGNAM:
+$PRGNAM: $HOMEPAGE
+$PRGNAM:
+EOF
+
+makepkg -l y -c n "${OUTPUT}"/"${PRGNAM}"-"${VERSION}"-noarch-\
+"${BUILD}""${TAG}".txz
