@@ -6,7 +6,20 @@
 set -e
 
 PRGNAM=flashplayer-plugin
-VERSION=11.2.202.644
+INSTALLED_VER="$(find /var/log/packages/ -type f -name "${PRGNAM}-*" | \
+    cut -f 5 -d / | rev | cut -f 3 -d - | rev)"
+echo "Installed version: ${INSTALLED_VER}"
+
+VERSION=$(wget -q -O - https://helpx.adobe.com/ru/flash-player/kb/\
+archived-flash-player-versions.html| grep "<a href=" | \
+    grep "Flash Player 11.2." | head -n 5 | cut -d ">" -f 3 | \
+    cut -d "<" -f 1 | cut -d " " -f 3 | sort -V | tail -n 1)
+echo "Latest version:    ${VERSION}"
+
+echo -ne "\nContinue? (y/n): "
+read YESNO
+[ "${YESNO}" != "y" ] && exit 0
+
 VERS_MAJ=$(echo ${VERSION} | cut -d. -f1)
 SRCARCH=fp_${VERSION}_archive.zip
 BUILD=1
