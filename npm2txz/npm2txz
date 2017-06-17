@@ -2,13 +2,6 @@
 
 set -e
 
-# check npm command
-if ! which npm 1>/dev/null 2>&1; then
-    echo "npm: command not found."
-    echo "You need to install nodejs package from SBo repository."
-    exit 1
-fi
-
 PRGNAM="$1"
 # check param (node module name)
 if [ "${PRGNAM}" == "" ] || \
@@ -16,6 +9,13 @@ if [ "${PRGNAM}" == "" ] || \
         [ "${PRGNAM}" == "-h" ]; then
     echo "Usage: $(basename "$0") module_name"
     exit 0
+fi
+
+# check npm command
+if ! which npm 1>/dev/null 2>&1; then
+    echo "npm: command not found."
+    echo "You need to install nodejs package from SBo repository."
+    exit 1
 fi
 
 BUILD=1
