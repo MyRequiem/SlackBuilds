@@ -1,0 +1,76 @@
+#!/bin/sh
+
+PKGNAME="flashplayer-plugin-11"
+INSTALLED_VER="$(find /var/log/packages/ -type f -name "${PKGNAME}-*" | \
+    cut -f 5 -d / | rev | cut -f 3 -d - | rev)"
+echo "Installed version: ${INSTALLED_VER}"
+
+URL="https://helpx.adobe.com/ru/flash-player/kb/"
+URL="${URL}archived-flash-player-versions.html"
+VERSION=$(wget -q -O - "${URL}" | grep "<a href=" | \
+    grep "Flash Player 11.2." | head -n 5 | cut -d ">" -f 3 | \
+    cut -d "<" -f 1 | cut -d " " -f 3 | sort -V | tail -n 1)
+echo "Latest version:    ${VERSION}"
+
+echo -ne "\nContinue? (y/N): "
+read -r YESNO
+[[ "${YESNO}" != "y" ]] && exit 0
+
+SRCARCH="fp_${VERSION}_archive.zip"
+TAG="myreq"
+PKGTYPE="txz"
+
+CWD=$(pwd)
+
+URL="https://fpdownload.macromedia.com/pub/flashplayer/installers/archive/"
+if ! [ -r "${CWD}/${SRCARCH}" ]; then
+    wget "${URL}${SRCARCH}"
+fi
+
+ARCH="i386"
+BITS="32"
+LIBDIRSUFFIX=""
+[[ "$(uname -m)" == "x86_64" ]] && \
+    LIBDIRSUFFIX="64" && \
+    ARCH="x86_64" && \
+    BITS="64"
+
+TMP="/tmp/${PKGNAME}-build"
+PKG="${TMP}/package-${PKGNAME}"
+OUTPUT="/root/src"
+
+rm -rf "${TMP}"
+mkdir -p "${PKG}" "${OUTPUT}"
+cd "${TMP}" || exit 1
+
+unzip "${CWD}/${SRCARCH}"
+tar xvf "11"_*_"${BITS}bit/flashplayer11"_*_"linux.${ARCH}.tar.gz" -C ${PKG}
+
+mkdir -p "${PKG}/usr/lib${LIBDIRSUFFIX}/mozilla/plugins"
+
+PLUGIN="${PKG}/usr/lib${LIBDIRSUFFIX}/mozilla/plugins/libflashplayer-11.so"
+mv ${PKG}/libflashplayer.so "${PLUGIN}"
+chmod 755 "${PLUGIN}"
+
+[[ "${ARCH}" == "x86_64" ]] && rm -rf "${PKG}/usr/lib"
+
+rm -rf "${PKG:?}/usr/bin"
+rm -rf "${PKG:?}/usr/share"
+rm -rf "${PKG:?}/usr/lib${LIBDIRSUFFIX}/kde4"
+
+mkdir -p "${PKG}/usr/doc/${PKGNAME}-${VERSION}"
+mv "${PKG}/readme.txt" "${PKG}/LGPL" "${PKG}/usr/doc/${PKGNAME}-${VERSION}"
+
+cat "${CWD}/${PKGNAME}.SlackBuild" > \
+    "${PKG}/usr/doc/${PKGNAME}-${VERSION}/${PKGNAME}.SlackBuild"
+
+mkdir -p "${PKG}/install"
+cat "${CWD}/slack-desc" > "${PKG}/install/slack-desc"
+cat "${CWD}/doinst.sh" > "${PKG}/install/doinst.sh"
+
+cd "${PKG}" || exit 1
+chown -R root:root "${PKG}"
+
+PKGBIN="${OUTPUT}/${PKGNAME}-${VERSION}-${ARCH}-${TAG}.${PKGTYPE}"
+rm -f "${PKGBIN}"
+/sbin/makepkg -l y -c n -p "${PKGBIN}"
