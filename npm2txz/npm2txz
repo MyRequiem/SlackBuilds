@@ -1,12 +1,11 @@
 #!/bin/sh
 
-set -e
+PKGNAME="$1"
 
-PRGNAM="$1"
 # check param (node module name)
-if [ "${PRGNAM}" == "" ] || \
-        [ "${PRGNAM}" == "--help" ] || \
-        [ "${PRGNAM}" == "-h" ]; then
+if [[ "x${PKGNAME}" == "x" || \
+        "x${PKGNAME}" == "x--help" || \
+        "x${PKGNAME}" == "x-h" ]]; then
     echo "Usage: $(basename "$0") module_name"
     exit 0
 fi
@@ -14,22 +13,21 @@ fi
 # check npm command
 if ! which npm 1>/dev/null 2>&1; then
     echo "npm: command not found."
-    echo "You need to install nodejs package from SBo repository."
+    echo "You need to install package \"nodejs\" from SBo repository."
     exit 1
 fi
 
-BUILD=1
-TAG=myreq
-OUTPUT=/root/src
-TMP=/tmp/npm-build/
+BUILD=""
+TAG="myreq"
+PKGTYPE="txz"
+OUTPUT="/root/src"
+TMP="/tmp/${PKGNAME}-build/"
 
-rm -rf "$TMP"
-mkdir -p "$TMP"
-mkdir -p "${OUTPUT}"
+rm -rf "${TMP}"
+mkdir -p "${TMP}"
+cd "${TMP}" || exit 1
 
-cd "$TMP" || exit 1
-
-DESTDIR=./ npm install -g "$PRGNAM" || exit 1
+DESTDIR=./ npm install -g "${PKGNAME}" || exit 1
 
 ARCH=""
 [ "$(uname -m)" == "x86_64" ] && ARCH="64"
@@ -37,7 +35,7 @@ ARCH=""
 if [ -n "${ARCH}" ]; then
     mv usr/lib usr/lib64
     (
-        cd usr/bin
+        cd usr/bin || exit 1
         FILES=$(ls)
         for FILE in ${FILES}; do
             if [ -L "${FILE}" ]; then
@@ -50,7 +48,12 @@ if [ -n "${ARCH}" ]; then
     )
 fi
 
-JSON=usr/lib${ARCH}/node_modules/${PRGNAM}/package.json
+# remove empty /usr/etc directory
+[ -d usr/etc ] && \
+    [[ "x$(find usr/etc -type f -o -type l  | wc -l)" == "x0" ]] && \
+    rm -rf usr/etc
+
+JSON="usr/lib${ARCH}/node_modules/${PKGNAME}/package.json"
 VERSION=$(grep -i "\"version\":" "${JSON}" | cut -d \" -f 4 | tr - .)
 DESCRIPTION=$(grep -i "\"description\":" "${JSON}" | cut -d \" -f 4)
 HOMEPAGE=$(grep -i "\"homepage\":" "${JSON}" | cut -d \" -f 4)
@@ -63,19 +66,21 @@ cat << EOF > install/slack-desc
 # on the right side marks the last column you can put a character in.  You must
 # make exactly 11 lines for the formatting to be correct.  It's also
 # customary to leave one space after the ':'.
-       |-----handy-ruler------------------------------------------------------|
-$PRGNAM: $PRGNAM
-$PRGNAM:
-$PRGNAM:
-$PRGNAM: $DESCRIPTION
-$PRGNAM:
-$PRGNAM:
-$PRGNAM:
-$PRGNAM:
-$PRGNAM:
-$PRGNAM: $HOMEPAGE
-$PRGNAM:
+       |-----handy-ruler-------------------------------------------------------|
+${PKGNAME}: (${PKGNAME})
+${PKGNAME}:
+${PKGNAME}:
+${PKGNAME}: ${DESCRIPTION}
+${PKGNAME}:
+${PKGNAME}:
+${PKGNAME}:
+${PKGNAME}:
+${PKGNAME}:
+${PKGNAME}: Homepage: ${HOMEPAGE}
+${PKGNAME}:
 EOF
 
-makepkg -l y -c n "${OUTPUT}"/"${PRGNAM}"-"${VERSION}"-noarch-\
-"${BUILD}""${TAG}".txz
+mkdir -p "${OUTPUT}"
+PACKAGE="${OUTPUT}/${PKGNAME}_npm-${VERSION}-noarch-${BUILD}${TAG}.${PKGTYPE}"
+rm -f "${PACKAGE}"
+makepkg -l y -c n "${PACKAGE}"
