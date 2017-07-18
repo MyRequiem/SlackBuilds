@@ -1,0 +1,114 @@
+#!/bin/sh
+
+PKGNAME="modem-manager-gui"
+
+INSTALLED_VER="$(find /var/log/packages/ -type f -name "${PKGNAME}-[0-9]**" | \
+    cut -f 5 -d / | rev | cut -f 3 -d - | rev)"
+echo -ne "Installed version: ${INSTALLED_VER}\nLatest release:    "
+
+URL="https://sourceforge.net/projects/modem-manager-gui/files"
+VERSION=$(wget -q -O - "${URL}/" | /bin/grep "${PKGNAME}-" | \
+    /bin/grep ".tar.gz</a></th>" | rev | cut -d \< -f 3- | cut -d . -f 3- | \
+    cut -d - -f 1 | rev | sort -V | tail -n 1)
+echo "${VERSION}"
+
+echo -ne "\nContinue? (y/N): "
+read -r JUNK
+[ "${JUNK}" != "y" ] && exit 0
+
+SOURCE="${PKGNAME}-${VERSION}.tar.gz"
+if ! [ -r "${SOURCE}" ]; then
+    wget "${URL}/${SOURCE}"
+fi
+
+# automatically determine the architecture we're building on:
+case "$(uname -m)" in
+    i?86)   export ARCH="i586"  ;;
+    x86_64) export ARCH="x86_64";;
+    *)      echo "Supported architectures: i?86 or x86_64"; exit 1;;
+esac
+
+if [[ "${ARCH}" == "x86_64" ]]; then
+    export LIBDIRSUFFIX="64"
+    export SLKCFLAGS="-O2 -fPIC"
+else
+    export LIBDIRSUFFIX=""
+    export SLKCFLAGS="-O2 -march=i586 -mtune=i686"
+fi
+
+CWD=$(pwd)
+TMP="/tmp/${PKGNAME}-build"
+PKG="${TMP}/package-${PKGNAME}"
+NUMJOBS=${NUMJOBS:-" -j7 "}
+BUILD="1"
+TAG="myreq"
+PKGTYPE="txz"
+OUTPUT="/root/src"
+
+rm -rf "${PKG}"
+mkdir -p "${PKG}"
+cd "${TMP}" || exit 1
+rm -rf "${PKGNAME}-${VERSION}"
+tar xvf "${CWD}/${SOURCE}"
+cd "${PKGNAME}-${VERSION}" || exit 1
+
+chown -R root:root .
+find . \( \
+        -perm 777 -o \
+        -perm 775 -o \
+        -perm 711 -o \
+        -perm 555 -o \
+        -perm 511 \
+    \) -exec chmod 755 {} \; \
+    -o \( \
+        -perm 666 -o \
+        -perm 664 -o \
+        -perm 600 -o \
+        -perm 444 -o \
+        -perm 440 -o \
+        -perm 400 \
+    \) -exec chmod 644 {} \;
+
+CFLAGS="${SLKCFLAGS}" \
+./configure \
+    --prefix=/usr \
+    --libdir="/usr/lib${LIBDIRSUFFIX}"
+
+make "${NUMJOBS}" || make || exit 1
+make install DESTDIR="${PKG}" || exit 1
+
+find "${PKG}" -type f -print0 | xargs -0 file 2>/dev/null | \
+    grep -e "executable" -e "shared object" | grep ELF | cut -f 1 -d : | \
+    xargs strip --strip-unneeded 2>/dev/null
+
+find "${PKG}" -type f -print0 | xargs -0 file 2>/dev/null | \
+    grep "current ar archive" | grep ELF | cut -f 1 -d : | \
+    xargs strip -g 2>/dev/null
+
+rm -rf "${PKG}/usr/lib${LIBDIRSUFFIX}/ofono"
+
+MAN="${PKG}/usr/share/man"
+[ -d "${MAN}" ] &&  mv "${MAN}" "${PKG}/usr"
+
+rm -rf "${PKG}/usr/share/"{help,polkit-1}
+
+DOC="${PKG}/usr/doc/${PKGNAME}-${VERSION}"
+mkdir -p "${DOC}"
+DOCS="\
+    AUTHORS \
+    Changelog \
+    LICENSE \
+"
+for FILE in ${DOCS}; do
+    cat "${FILE}" > "${DOC}/${FILE}"
+done
+
+mkdir -p "${PKG}/install"
+cat "${CWD}/slack-desc" > "${PKG}/install/slack-desc"
+cat "${CWD}/doinst.sh" > "${PKG}/install/doinst.sh"
+
+mkdir -p "${OUTPUT}"
+cd "${PKG}" || exit 1
+PKGBIN="${OUTPUT}/${PKGNAME}-${VERSION}-${ARCH}-${BUILD}${TAG}.${PKGTYPE}"
+rm -f "${PKGBIN}"
+makepkg -l y -c n "${PKGBIN}"
