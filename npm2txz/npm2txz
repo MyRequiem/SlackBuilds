@@ -2,11 +2,17 @@
 
 PKGNAME="$1"
 
+SCRIPT_NAME="$(basename "$0")"
+if [[ "x$(id -u)" == "x0" ]]; then
+    echo "${SCRIPT_NAME} should be run as a normal user."
+    exit 1
+fi
+
 # check param (node module name)
 if [[ "x${PKGNAME}" == "x" || \
         "x${PKGNAME}" == "x--help" || \
         "x${PKGNAME}" == "x-h" ]]; then
-    echo "Usage: $(basename "$0") module_name"
+    echo "Usage: ${SCRIPT_NAME} module_name"
     exit 0
 fi
 
@@ -20,7 +26,7 @@ fi
 BUILD=""
 TAG="myreq"
 PKGTYPE="txz"
-OUTPUT="/root/src"
+OUTPUT="$(pwd)"
 TMP="/tmp/${PKGNAME}-build/"
 
 rm -rf "${TMP}"
@@ -80,7 +86,23 @@ ${PKGNAME}: Homepage: ${HOMEPAGE}
 ${PKGNAME}:
 EOF
 
-mkdir -p "${OUTPUT}"
+sudo chown -R root:root .
+sudo find . \( \
+        -perm 777 -o \
+        -perm 775 -o \
+        -perm 711 -o \
+        -perm 555 -o \
+        -perm 511 \
+    \) -exec chmod 755 {} \; \
+    -o \( \
+        -perm 666 -o \
+        -perm 664 -o \
+        -perm 600 -o \
+        -perm 444 -o \
+        -perm 440 -o \
+        -perm 400 \
+    \) -exec chmod 644 {} \;
+
 PACKAGE="${OUTPUT}/${PKGNAME}_npm-${VERSION}-noarch-${BUILD}${TAG}.${PKGTYPE}"
-rm -f "${PACKAGE}"
-makepkg -l y -c n "${PACKAGE}"
+sudo rm -f "${PACKAGE}"
+sudo /sbin/makepkg -l y -c n "${PACKAGE}"
