@@ -4,15 +4,15 @@ PKGNAME="modem-manager-gui"
 
 INSTALLED_VER="$(find /var/log/packages/ -type f -name "${PKGNAME}-[0-9]**" | \
     cut -f 5 -d / | rev | cut -f 3 -d - | rev)"
-echo -ne "Installed version: ${INSTALLED_VER}\nLatest release:    "
+echo -ne "Installed version: ${INSTALLED_VER}\\nLatest release:    "
 
 URL="https://sourceforge.net/projects/modem-manager-gui/files"
 VERSION=$(wget -q -O - "${URL}/" | /bin/grep "${PKGNAME}-" | \
-    /bin/grep ".tar.gz</a></th>" | rev | cut -d \< -f 3- | cut -d . -f 3- | \
-    cut -d - -f 1 | rev | sort -V | tail -n 1)
+    /bin/grep ".tar.gz</span></a></th>" | rev | cut -d \< -f 4- | \
+    cut -d . -f 3- | cut -d - -f 1 | rev | sort -V | tail -n 1)
 echo "${VERSION}"
 
-echo -ne "\nContinue? (y/N): "
+echo -ne "\\nContinue? [y/N]: "
 read -r JUNK
 [ "${JUNK}" != "y" ] && exit 0
 
