@@ -38,7 +38,17 @@ DESTDIR=./ npm install -g "${PKGNAME}" || exit 1
 ARCH=""
 [ "$(uname -m)" == "x86_64" ] && ARCH="64"
 
-if [ -n "${ARCH}" ]; then
+if [ "${PKGNAME}" == "markdownlint" ]; then
+    [ -n "${ARCH}" ] && mv usr/lib usr/lib64
+    mkdir -p usr/bin
+    (
+        cd usr/bin || exit 1
+        MARKDOWN="../lib${ARCH}/node_modules/markdownlint/node_modules/\
+markdown-it/bin/markdown-it.js"
+        chmod 755 "${MARKDOWN}"
+        ln -s "${MARKDOWN}" "${PKGNAME}"
+    )
+elif [ -n "${ARCH}" ]; then
     mv usr/lib usr/lib64
     (
         cd usr/bin || exit 1
@@ -65,6 +75,8 @@ DESCRIPTION=$(grep -i "\"description\":" "${JSON}" | cut -d \" -f 4)
 HOMEPAGE=$(grep -i "\"homepage\":" "${JSON}" | cut -d \" -f 4)
 
 mkdir install
+PKGNAME="${PKGNAME}_npm"
+
 cat << EOF > install/slack-desc
 # HOW TO EDIT THIS FILE:
 # The "handy ruler" below makes it easier to edit a package description.  Line
@@ -103,6 +115,6 @@ sudo find . \( \
         -perm 400 \
     \) -exec chmod 644 {} \;
 
-PACKAGE="${OUTPUT}/${PKGNAME}_npm-${VERSION}-noarch-${BUILD}${TAG}.${PKGTYPE}"
+PACKAGE="${OUTPUT}/${PKGNAME}-${VERSION}-noarch-${BUILD}${TAG}.${PKGTYPE}"
 sudo rm -f "${PACKAGE}"
 sudo /sbin/makepkg -l y -c n "${PACKAGE}"
