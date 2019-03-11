@@ -1,0 +1,4 @@
+Wiki: https://wiki.debian.org/Teams/Dpkg/
+Git web interface: https://git.dpkg.org/cgit/dpkg/dpkg.git
+
+git clone https://git.dpkg.org/git/dpkg/dpkg.git

@@ -36,4 +36,4 @@ fi
 EOF
 fi
 
-echo -e "Type in the browser: http://localhost:2605/index.html\n"
+echo -e "Type in the browser: http://localhost:2605/index.html\\n"

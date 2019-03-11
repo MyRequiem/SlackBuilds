@@ -5,137 +5,63 @@
 # THIS SOFTWARE IS PROVIDED BY THE AUTHOR "AS IS" AND ANY EXPRESS OR IMPLIED
 
 PRGNAM=bitmeteros
-CWD=$(pwd)
+VERSION=${VERSION:-0.7.6}
 TMP=${TMP:-/tmp}
-BUILD=$TMP/build-${PRGNAM}
-PKG=$BUILD/package-${PRGNAM}
+CWD=$(pwd)
+
+if [ -z "$ARCH" ]; then
+  case "$( uname -m )" in
+    i?86) ARCH=i586 ;;
+    arm*) ARCH=arm ;;
+       *) ARCH=$(uname -m) ;;
+  esac
+fi
+
+BUILD=${TMP}/build-${PRGNAM}
+PKG=${BUILD}/package-${PRGNAM}
 OUTPUT=${OUTPUT:-/tmp}
-TAG=${TAG:-1myreq}
+TAG=${TAG:-1_myreq}
 PKGTYPE=${PKGTYPE:-txz}
 
-if [ -z "${ARCH}" ]; then
-    ARCH=$(uname -m)
-    case "${ARCH}" in
-        i?86)   ARCH=i486   ;;
-        arm*)   ARCH=arm    ;;
-    esac
-fi
-
-if [ ${ARCH} = "i486" ]; then
-    LIBDIRSUFFIX=""
-elif [ ${ARCH} = "i686" ]; then
-    LIBDIRSUFFIX=""
-elif [ ${ARCH} = "x86_64" ]; then
-    LIBDIRSUFFIX="64"
-else
-    LIBDIRSUFFIX=""
-fi
-
-# checking deps
-checkdeps() {
-    echo -n "Checking wget package... "
-    if ! ls /var/log/packages/wget-[0-9]* 1>/dev/null 2>&1; then
-        echo no
-        exit 1
-    fi
-    echo ok
-
-    echo -n "Checking alien package... "
-    if ! ls /var/log/packages/alien-[0-9]* 1>/dev/null 2>&1; then
-        echo no
-        echo Downlod and install alien package:
-        echo http://joeyh.name/code/alien/
-        exit 1
-    fi
-    echo ok
-
-    echo -n "Checking git package... "
-    if ! ls /var/log/packages/git-[0-9]* 1>/dev/null 2>&1; then
-        echo no
-        echo Downlod and install git package:
-        echo http://git-scm.com/downloads
-        exit 1
-    fi
-    echo ok
-
-    echo -n "Checking bitmeter OS .deb package... "
-    if ! ls ${PRGNAM}-[0-9]*.tgz 1>/dev/null 2>&1; then
-        echo -e "no\nDownloading Bitmeter Os .deb package:"
-        wget -ct 0 \
-            http://codebox.org.uk/downloads/bitmeteros/linux${LIBDIRSUFFIX}
-        mv linux${LIBDIRSUFFIX} linux${LIBDIRSUFFIX}.deb
-        alien -t --scripts linux${LIBDIRSUFFIX}.deb
-        rm -f linux${LIBDIRSUFFIX}.deb
-    else
-        echo ok
-    fi
-
-    echo -n "Checking source code dpkg package... "
-    if ! [ -d ./dpkg ]; then
-        echo -e "no\nClone source code dpkg package from GitHub:"
-        git clone git://git.debian.org/git/dpkg/dpkg.git
-    else
-        echo ok
-    fi
-}
-
-checkdeps
-VERSION=$(find "${CWD}" -type f -name "bitmeteros-*.tgz" | \
-    rev | cut -f 2- -d . | cut -f 1 -d - | rev);
-
 rm -rf "${BUILD}"
-mkdir -p "${TMP}" "${BUILD}" "${PKG}" "${OUTPUT}"
-cd "${PKG}" || exit 1
-tar -xvzf "${CWD}"/"${PRGNAM}"-"${VERSION}".tgz
-rm -rf install/*
-cat "${CWD}"/doinst.sh > install/doinst.sh
-cat "${CWD}"/slack-desc > install/slack-desc
-mv usr/share/man usr/
-
-echo -e "\n---------------------------"
-echo Download docs...
-echo ---------------------------
-
-URL=http://codebox.org.uk/pages/bitmeteros
-doc=usr/doc/${PRGNAM}-${VERSION}
-PARAM=" -ct 0 -nd -pHEKk"
-docs="bitmeteros change-log faq bmclient bmdb bmsync"
-for d in ${docs}; do
-    mkdir -p "${doc}"/"${d}"
-    if [ "${d}" = "bitmeteros" ]; then
-        eval "/usr/bin/wget ${PARAM} -P ${doc}/${d} ${URL}"
-    elif [ "${d}" = "bmclient" ]; then
-        eval "/usr/bin/wget ${PARAM} -P ${doc}/${d} ${URL}/bmclient/man"
-        mv "${doc}"/"${d}"/man.html "${doc}"/"${d}"/bmclient_manual.html
-    elif [ "${d}" = "bmdb" ]; then
-        eval "/usr/bin/wget ${PARAM} -P ${doc}/${d} ${URL}/bmdb/man"
-        mv "${doc}"/"${d}"/man.html "${doc}"/"${d}"/bmdb_manual.html
-    elif [ "${d}" = "bmsync" ]; then
-        eval "/usr/bin/wget ${PARAM} -P ${doc}/${d} ${URL}/bmsync/man"
-        mv "${doc}"/"${d}"/man.html "${doc}"/"${d}"/bmsync_manual.html
-    else
-        eval "/usr/bin/wget ${PARAM} -P ${doc}/${d} ${URL}/${d}"
-    fi
-done
-
-find "${doc}" -type f -a ! \( -name "*.html" -o -name "*.ico" -o -name "*.png" \
--o -name "*.jpeg" -o -name "*.jpg" -o -name "*.css" \) -delete
-
-cp -r "${CWD}"/dpkg "${BUILD}"
-cd "${BUILD}"/dpkg || exit 1
-
-autoreconf -f -i || exit 1
-./configure && make
-
-cd "${PKG}" || exit 1
-cp "${BUILD}"/dpkg/utils/start-stop-daemon usr/bin
+mkdir -p "${PKG}"
+cd "${BUILD}" || exit 1
+tar -xvf "${CWD}/${PRGNAM}-${VERSION}".tar.xz
+tar -xvf "${CWD}"/dpkg-*.tar.xz
 
 chown -R root:root .
 find -L . \
  \( -perm 777 -o -perm 775 -o -perm 750 -o -perm 711 -o -perm 555 \
   -o -perm 511 \) -exec chmod 755 {} \; -o \
  \( -perm 666 -o -perm 664 -o -perm 640 -o -perm 600 -o -perm 444 \
- -o -perm 440 -o -perm 400 \) -exec chmod 644 {} \;
+  -o -perm 440 -o -perm 400 \) -exec chmod 644 {} \;
 
-/sbin/makepkg -l y -c n \
-    "${OUTPUT}"/"${PRGNAM}"-"${VERSION}"-"${ARCH}"-"${TAG}"."${PKGTYPE}"
+
+cd "${PRGNAM}-${VERSION}" || exit 1
+zcat "${CWD}/bitmeteros-fix-build.diff.gz" | patch -p 1 --verbose || exit 1
+
+cd build/linux || exit 1
+sh build.sh
+mv debian/etc "${PKG}"
+mkdir -p "${PKG}/usr/doc/${PRGNAM}-${VERSION}"
+cp -R debian/usr/bin "${PKG}/usr/"
+mv debian/usr/share/man "${PKG}/usr/"
+cp -R debian/usr/share "${PKG}/usr"
+cat "${CWD}/${PRGNAM}.SlackBuild" > \
+    "${PKG}/usr/doc/${PRGNAM}-${VERSION}/${PRGNAM}.SlackBuild"
+cp -R debian/var "${PKG}"
+
+# building start-stop-daemon
+cd "${BUILD}"/dpkg-* || exit 1
+autoreconf -f -i && ./configure && make || exit 1
+cp utils/start-stop-daemon "${PKG}/usr/bin"
+
+cd "${PKG}" || exit 1
+mkdir install
+cat "${CWD}"/doinst.sh > install/doinst.sh
+cat "${CWD}"/slack-desc > install/slack-desc
+
+mkdir -p "${OUTPUT}"
+PKGPATH="${OUTPUT}/${PRGNAM}-${VERSION}-${ARCH}-${TAG}.${PKGTYPE}"
+rm -f "${PKGPATH}"
+/sbin/makepkg -l y -c n "${PKGPATH}"
