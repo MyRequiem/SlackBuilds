@@ -1,0 +1,15 @@
+Netactview is a graphical network connections viewer for Linux, similar in
+functionality with Netstat. It includes features like process information,
+host name retrieval, automatic refresh, sorting, filtering and csv file save.
+It has a fully featured GTK 2 graphical interface.
+
+Main repository on sourceforge:
+http://netactview.sourceforge.net
+http://sourceforge.net/projects/netactview
+
+Alternative project repository:
+https://github.com/mihaivzr/netactview
+
+Dependencies from SBo repository:
+libgnome
+libgtop

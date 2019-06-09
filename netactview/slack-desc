@@ -1,0 +1,19 @@
+# HOW TO EDIT THIS FILE:
+# The "handy ruler" below makes it easier to edit a package description.  Line
+# up the first '|' above the ':' following the base package name, and the '|'
+# on" the right side marks the last column you can put a character in.
+# You must make exactly 11 lines for the formatting to be correct.  It's also
+# customary to leave one space after the ':'."
+
+          |-----handy-ruler----------------------------------------------------|
+netactview: Netactview (Net Activity Viewer)
+netactview:
+netactview: Netactview is a graphical network connections viewer for Linux,
+netactview: similar in functionality with Netstat. It includes features like
+netactview: process information, host name retrieval, automatic refresh,
+netactview: sorting, filtering and csv file save. It has a fully featured
+netactview: GTK 2 graphical interface.
+netactview:
+netactview:
+netactview: Homepage: http://netactview.sourceforge.net
+netactview:
